@@ -335,12 +335,6 @@ file_names.iter().map(|x| x.as_str()).join(", "))]
     #[error("Failed to decrypt local Hex API key")]
     FailedToDecryptLocalHexApiKey { detail: String },
 
-    #[error("Invalid Hex API URL")]
-    InvalidHexApiUrl { url: String },
-
-    #[error("Invalid Hex repository URL")]
-    InvalidHexRepositoryUrl { url: String },
-
     #[error("Cannot add a package with the same name as a dependency")]
     CannotAddSelfAsDependency { name: EcoString },
 }
@@ -4556,34 +4550,6 @@ or you can publish it using a different version number"
                 hint: Some(
                     "Please add the --replace flag if you want to replace the release.".into(),
                 ),
-            }],
-
-            Error::InvalidHexApiUrl { url } => vec![Diagnostic {
-                title: "Invalid Hex API URL".into(),
-                text: wrap_format!(
-                    "The HEX_API_URL environment variable contains an invalid URL.
-
-The URL provided was: {url}
-
-Please ensure the URL is valid and includes the protocol (e.g., https://hex.example.com/api/)."
-                ),
-                hint: None,
-                level: Level::Error,
-                location: None,
-            }],
-
-            Error::InvalidHexRepositoryUrl { url } => vec![Diagnostic {
-                title: "Invalid Hex repository URL".into(),
-                text: wrap_format!(
-                    "The HEX_REPOSITORY_URL environment variable contains an invalid URL.
-
-The URL provided was: {url}
-
-Please ensure the URL is valid and includes the protocol (e.g., https://repo.hex.example.com/)."
-                ),
-                hint: None,
-                level: Level::Error,
-                location: None,
             }],
 
             Error::CannotAddSelfAsDependency { name } => vec![Diagnostic {
