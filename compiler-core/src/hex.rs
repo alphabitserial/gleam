@@ -27,6 +27,35 @@ fn key_name(hostname: &str) -> String {
     format!("gleam-{hostname}")
 }
 
+/// Creates a hexpm Config with support for custom Hex mirrors via environment variables.
+///
+/// The following environment variables can be used:
+/// - `HEX_API_URL`: Override the Hex API base URL (default: https://hex.pm/api/)
+/// - `HEX_REPOSITORY_URL`: Override the Hex repository base URL (default: https://repo.hex.pm/)
+///
+/// This is useful for using self-hosted Hex instances or mirrors.
+pub fn config_from_env() -> Result<hexpm::Config> {
+    let mut config = hexpm::Config::new();
+
+    // Check for custom API URL
+    if let Ok(api_url) = std::env::var("HEX_API_URL") {
+        tracing::info!("Using custom Hex API URL from HEX_API_URL: {}", api_url);
+        config.api_base = api_url
+            .parse()
+            .map_err(|_| Error::InvalidHexApiUrl { url: api_url.clone() })?;
+    }
+
+    // Check for custom repository URL
+    if let Ok(repo_url) = std::env::var("HEX_REPOSITORY_URL") {
+        tracing::info!("Using custom Hex repository URL from HEX_REPOSITORY_URL: {}", repo_url);
+        config.repository_base = repo_url
+            .parse()
+            .map_err(|_| Error::InvalidHexRepositoryUrl { url: repo_url.clone() })?;
+    }
+
+    Ok(config)
+}
+
 pub async fn publish_package<Http: HttpClient>(
     release_tarball: Vec<u8>,
     version: String,
@@ -166,15 +195,15 @@ impl Downloader {
         http: Box<dyn HttpClient>,
         untar: Box<dyn TarUnpacker>,
         paths: ProjectPaths,
-    ) -> Self {
-        Self {
+    ) -> Result<Self> {
+        Ok(Self {
             fs_reader: DebugIgnore(fs_reader),
             fs_writer: DebugIgnore(fs_writer),
             http: DebugIgnore(http),
             untar: DebugIgnore(untar),
-            hex_config: hexpm::Config::new(),
+            hex_config: config_from_env()?,
             paths,
-        }
+        })
     }
 
     pub async fn ensure_package_downloaded(

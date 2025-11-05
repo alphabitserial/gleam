@@ -469,7 +469,7 @@ async fn add_missing_packages<Telem: Telemetry>(
     // If we need to download at-least one package
     if missing_hex_packages.peek().is_some() || !missing_git_packages.is_empty() {
         let http = HttpClient::boxed();
-        let downloader = hex::Downloader::new(fs.clone(), fs, http, Untar::boxed(), paths.clone());
+        let downloader = hex::Downloader::new(fs.clone(), fs, http, Untar::boxed(), paths.clone())?;
         let start = Instant::now();
         telemetry.downloading_package("packages");
         downloader
@@ -1093,7 +1093,7 @@ async fn lookup_package(
     match provided.get(name.as_str()) {
         Some(provided_package) => Ok(provided_package.to_manifest_package(name.as_str())),
         None => {
-            let config = hexpm::Config::new();
+            let config = hex::config_from_env()?;
             let release =
                 hex::get_package_release(&name, &version, &config, &HttpClient::new()).await?;
             let build_tools = release
@@ -1183,7 +1183,7 @@ impl dependency::PackageFetcher for PackageFetcher {
         }
 
         tracing::debug!(package = package, "looking_up_hex_package");
-        let config = hexpm::Config::new();
+        let config = hex::config_from_env().map_err(PackageFetchError::fetch_error)?;
         let request = hexpm::repository_v2_get_package_request(package, None, &config);
         let response = self
             .runtime
